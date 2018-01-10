@@ -34,11 +34,6 @@ Copy `config.example.json` to `config.json` and edit it accordingly.
 The `postgresql` key should be set to a URL like so:
 `postgresql://user:password@host/database`
 
-6. **Configuration of database**
-
-To configure the PostgreSQL database for use by the bot, run
-`python3.5 dbinit.py`
-
 
 ## License
 
