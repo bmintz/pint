@@ -1,4 +1,6 @@
 {
+	"description": "Lets server admins grant \"pin message\" capabilities without granting \"manage messages\" capabilities",
+
 	"database": {
 		"password": "hunter2",
 		"host": "127.0.0.1"},
