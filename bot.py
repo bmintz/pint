@@ -3,6 +3,7 @@
 
 import asyncio
 import json
+import traceback
 
 import asyncpg
 import discord
@@ -58,6 +59,7 @@ class Bot(commands.Bot):
 			except Exception as e:
 				exc = '{}: {}'.format(type(e).__name__, e)
 				print('Failed to load extension {}\n{}'.format(extension, exc))
+				print(traceback.format_exc())
 
 	async def run(self, token, *args, **kwargs):
 		try:
