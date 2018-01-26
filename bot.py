@@ -10,31 +10,26 @@ import discord
 from discord.ext import commands
 
 
-LOOP = asyncio.get_event_loop()
-
-
 with open('config.json', 'r') as f:
 	CONFIG = json.load(f)
 
 
 async def get_db():
 	credentials = {
-		key: CONFIG['database'][key]
-		for key in ('password', 'host')}
-	credentials.update(dict(
-		user='pint',
-		database='pint',))
+		'user': 'pint',
+		'password': CONFIG['database']['password'],
+		'database': 'pint',
+		'host': '127.0.0.1'}
 	db = await asyncpg.create_pool(**credentials)
-
+	await db.execute('CREATE SCHEMA IF NOT EXISTS pint')
 	await db.execute(
-		'CREATE TABLE IF NOT EXISTS permissions('
-			'id bigint PRIMARY KEY,'
-			'guild_id bigint NOT NULL,'
-			'user_id bigint NOT NULL,'
-			# if the channel is null,
-			# the user has permissions to the whole guild
-			'channel_id bigint)')
-
+		'CREATE TABLE IF NOT EXISTS pint.permissions('
+			'guild bigint NOT NULL,'
+			'"user" bigint NOT NULL,'
+			'channel bigint)')
+	await db.execute(
+		'CREATE TABLE IF NOT EXISTS pint.pins('
+			'id bigint NOT NULL)')
 	return db
 
 
@@ -44,13 +39,12 @@ class Bot(commands.Bot):
 		'admin',
 		'stats',)
 
-	def __init__(self, **kwargs):
-		self.db = LOOP.run_until_complete(get_db())
-		self.config = CONFIG
+	def __init__(self, db, description=None, **kwargs):
 		super().__init__(
-			loop=LOOP,
-			description=self.config['description'],
+			description=description,
 			command_prefix=commands.when_mentioned)
+		self.config = CONFIG
+		self.db = db
 
 		for extension in self.STARTUP_EXTENSIONS:
 			print('Loading extension', extension)
@@ -65,7 +59,7 @@ class Bot(commands.Bot):
 		try:
 			await self.start(token, *args, **kwargs)
 		finally:
-			await self.db.close()
+			await self.conn.close()
 
 	async def on_ready(self):
 		message = 'Logged in as: %s' % self.user
@@ -73,11 +67,10 @@ class Bot(commands.Bot):
 		print(separator, message, separator, sep='\n')
 
 
-def main():
-	bot = Bot()
-	loop = asyncio.get_event_loop()
-	loop.run_until_complete(bot.run(CONFIG['tokens']['discord']))
+async def main():
+	bot = Bot(await get_db(), CONFIG['description'])
+	await bot.run(CONFIG['tokens']['discord'])
 
 
 if __name__ == '__main__':
-	main()
+	asyncio.get_event_loop().run_until_complete(main())
